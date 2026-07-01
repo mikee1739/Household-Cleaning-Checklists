@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Keeping List">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#FAF6EF">
+<title>The Keeping List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #FAF6EF;
+    --paper-line: #E4DACB;
+    --ink: #2C2A26;
+    --ink-soft: #6B6559;
+    --daily: #4A6670;
+    --daily-bg: #E9EFEF;
+    --weekly: #7C8A5E;
+    --weekly-bg: #EDEFE4;
+    --monthly: #B4763B;
+    --monthly-bg: #F3E7D8;
+    --seasonal: #8B5A5A;
+    --seasonal-bg: #F1E1DE;
+    --card: #FFFEFB;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Source Sans 3', sans-serif;
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 2.1em;
+    color:var(--ink);
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:2.5rem 1.5rem 4rem;
+  }
+  header{
+    text-align:center;
+    margin-bottom:2rem;
+  }
+  .eyebrow{
+    font-size:0.72rem;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:0.4rem;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:2.4rem;
+    margin:0 0 0.3rem;
+    letter-spacing:-0.01em;
+  }
+  .date-line{
+    font-style:italic;
+    font-family:'Fraunces', serif;
+    color:var(--ink-soft);
+    font-size:1rem;
+  }
+
+  .tabs{
+    display:flex;
+    gap:0.5rem;
+    margin-bottom:1.5rem;
+    border-bottom:1px solid var(--paper-line);
+  }
+  .tab{
+    flex:1;
+    padding:0.8rem 0.5rem 0.7rem;
+    text-align:center;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:'Source Sans 3', sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    color:var(--ink-soft);
+    border-bottom:3px solid transparent;
+    transition:color 0.15s ease, border-color 0.15s ease;
+  }
+  .tab .count{
+    display:block;
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:400;
+    font-size:0.78rem;
+    margin-top:0.15rem;
+  }
+  .tab[data-period="daily"].active{ color:var(--daily); border-color:var(--daily); }
+  .tab[data-period="weekly"].active{ color:var(--weekly); border-color:var(--weekly); }
+  .tab[data-period="monthly"].active{ color:var(--monthly); border-color:var(--monthly); }
+  .tab[data-period="seasonal"].active{ color:var(--seasonal); border-color:var(--seasonal); }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .progress-row{
+    display:flex;
+    align-items:center;
+    gap:0.75rem;
+    margin-bottom:1.25rem;
+  }
+  .progress-track{
+    flex:1;
+    height:6px;
+    background:var(--paper-line);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    border-radius:3px;
+    transition:width 0.3s ease;
+  }
+  [data-period="daily"] .progress-fill{ background:var(--daily); }
+  [data-period="weekly"] .progress-fill{ background:var(--weekly); }
+  [data-period="monthly"] .progress-fill{ background:var(--monthly); }
+  [data-period="seasonal"] .progress-fill{ background:var(--seasonal); }
+  .progress-label{
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    white-space:nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ul.list{
+    list-style:none;
+    margin:0 0 1.25rem;
+    padding:0;
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  li.item{
+    display:flex;
+    align-items:center;
+    gap:0.85rem;
+    padding:0.85rem 1rem;
+    border-bottom:1px solid var(--paper-line);
+  }
+  li.item:last-child{ border-bottom:none; }
+
+  .check{
+    flex:none;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    border:2px solid var(--ink-soft);
+    background:transparent;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    transition:background 0.15s ease, border-color 0.15s ease;
+  }
+  .check svg{ opacity:0; width:12px; height:12px; transition:opacity 0.1s ease; }
+  [data-period="daily"] .check.checked{ background:var(--daily); border-color:var(--daily); }
+  [data-period="weekly"] .check.checked{ background:var(--weekly); border-color:var(--weekly); }
+  [data-period="monthly"] .check.checked{ background:var(--monthly); border-color:var(--monthly); }
+  [data-period="seasonal"] .check.checked{ background:var(--seasonal); border-color:var(--seasonal); }
+  .check.checked svg{ opacity:1; }
+
+  .item-text{
+    flex:1;
+    font-size:0.98rem;
+    line-height:1.3;
+  }
+  .item.done .item-text{
+    color:var(--ink-soft);
+    text-decoration:line-through;
+    text-decoration-color:var(--paper-line);
+  }
+
+  .remove-btn{
+    flex:none;
+    background:none;
+    border:none;
+    color:var(--paper-line);
+    font-size:1.1rem;
+    cursor:pointer;
+    padding:0.2rem 0.4rem;
+    line-height:1;
+    opacity:0;
+    transition:opacity 0.15s ease, color 0.15s ease;
+  }
+  li.item:hover .remove-btn{ opacity:1; }
+  .remove-btn:hover{ color:#B5473F; }
+
+  .add-row{
+    display:flex;
+    gap:0.5rem;
+  }
+  .add-row input{
+    flex:1;
+    padding:0.75rem 0.9rem;
+    border-radius:8px;
+    border:1px solid var(--paper-line);
+    background:var(--card);
+    font-family:'Source Sans 3', sans-serif;
+    font-size:0.92rem;
+    color:var(--ink);
+  }
+  .add-row input:focus{ outline:2px solid var(--ink-soft); outline-offset:1px; }
+  .add-row button{
+    flex:none;
+    padding:0 1.1rem;
+    border-radius:8px;
+    border:none;
+    font-family:'Source Sans 3', sans-serif;
+    font-weight:600;
+    font-size:0.92rem;
+    cursor:pointer;
+    color:#fff;
+  }
+  [data-period="daily"] .add-row button{ background:var(--daily); }
+  [data-period="weekly"] .add-row button{ background:var(--weekly); }
+  [data-period="monthly"] .add-row button{ background:var(--monthly); }
+  [data-period="seasonal"] .add-row button{ background:var(--seasonal); }
+
+  .empty{
+    text-align:center;
+    padding:2rem 1rem;
+    color:var(--ink-soft);
+    font-style:italic;
+    font-family:'Fraunces', serif;
+  }
+
+  .footnote{
+    text-align:center;
+    font-size:0.75rem;
+    color:var(--ink-soft);
+    margin-top:1.5rem;
+  }
+
+  .status{
+    position:fixed;
+    bottom:1rem;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:var(--paper);
+    padding:0.5rem 1rem;
+    border-radius:20px;
+    font-size:0.8rem;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.25s ease;
+  }
+  .status.show{ opacity:0.9; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">A Good Thing, Done Daily</div>
+    <h1>The Keeping List</h1>
+    <div class="date-line" id="dateLine"></div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-period="daily">Everyday<span class="count" id="count-daily"></span></button>
+    <button class="tab" data-period="weekly">Weekly<span class="count" id="count-weekly"></span></button>
+    <button class="tab" data-period="monthly">Monthly<span class="count" id="count-monthly"></span></button>
+    <button class="tab" data-period="seasonal">Seasonal<span class="count" id="count-seasonal"></span></button>
+  </div>
+
+  <div class="panel active" data-period="daily">
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="fill-daily"></div></div>
+      <div class="progress-label" id="label-daily"></div>
+    </div>
+    <ul class="list" id="list-daily"></ul>
+    <div class="add-row">
+      <input type="text" id="input-daily" placeholder="Add an everyday task…">
+      <button type="button" onclick="addTask('daily')">Add</button>
+    </div>
+  </div>
+
+  <div class="panel" data-period="weekly">
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="fill-weekly"></div></div>
+      <div class="progress-label" id="label-weekly"></div>
+    </div>
+    <ul class="list" id="list-weekly"></ul>
+    <div class="add-row">
+      <input type="text" id="input-weekly" placeholder="Add a weekly task…">
+      <button type="button" onclick="addTask('weekly')">Add</button>
+    </div>
+  </div>
+
+  <div class="panel" data-period="monthly">
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="fill-monthly"></div></div>
+      <div class="progress-label" id="label-monthly"></div>
+    </div>
+    <ul class="list" id="list-monthly"></ul>
+    <div class="add-row">
+      <input type="text" id="input-monthly" placeholder="Add a monthly task…">
+      <button type="button" onclick="addTask('monthly')">Add</button>
+    </div>
+  </div>
+
+  <div class="panel" data-period="seasonal">
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="fill-seasonal"></div></div>
+      <div class="progress-label" id="label-seasonal"></div>
+    </div>
+    <ul class="list" id="list-seasonal"></ul>
+    <div class="add-row">
+      <input type="text" id="input-seasonal" placeholder="Add a seasonal task…">
+      <button type="button" onclick="addTask('seasonal')">Add</button>
+    </div>
+  </div>
+
+  <div class="footnote">Everyday tasks reset each morning · Weekly tasks reset each Monday · Monthly tasks reset on the 1st · Seasonal tasks reset each new season</div>
+</div>
+
+<div class="status" id="status"></div>
+
+<script>
+const DEFAULT_TASKS = {
+  daily: [
+    "Make the beds",
+    "Wipe kitchen counters",
+    "Wash or load dishes",
+    "Wipe down the stovetop",
+    "Sweep or quick-vacuum the kitchen floor",
+    "Take out the trash",
+    "Tidy surfaces in living areas",
+    "Wipe the bathroom sink",
+    "One load of laundry, as needed",
+    "Quick declutter — one pass through the house"
+  ],
+  weekly: [
+    "Vacuum all rooms",
+    "Mop hard floors",
+    "Dust furniture and surfaces",
+    "Clean toilets, tubs, and showers",
+    "Change and wash bed linens",
+    "Wipe down major appliance exteriors",
+    "Water houseplants",
+    "Clean mirrors and glass",
+    "Empty all trash and recycling bins",
+    "Wipe light switches and doorknobs"
+  ],
+  monthly: [
+    "Wash windows and window sills",
+    "Dust ceiling fans and light fixtures",
+    "Vacuum under beds and furniture",
+    "Wipe down baseboards",
+    "Clean inside the microwave",
+    "Clean out and wipe down the refrigerator",
+    "Vacuum upholstery and cushions",
+    "Wash the shower curtain or liner",
+    "Descale the coffee maker or kettle",
+    "Clean inside the oven",
+    "Dust tops of doors and door frames",
+    "Wipe down cabinet fronts and handles",
+    "Clean or replace air vent filters"
+  ],
+  seasonal: [
+    "Bedroom: Launder pillows",
+    "Bedroom: Turn mattresses",
+    "Bedroom: Vacuum mattresses, box springs, and bed frames",
+    "Kitchen: Clean hanging pot rack and polish copper",
+    "Kitchen: Clean ovens",
+    "Kitchen: Organize pantry, discarding expired food",
+    "Kitchen: Replace baking soda in refrigerator and freezer",
+    "Kitchen: Remove contents of cabinets and clean interiors",
+    "Kitchen: Wipe kitchen ceiling",
+    "Kitchen: Wipe the inside of the refrigerator",
+    "Library: Rotate stacked books to prevent warping",
+    "Living Room: Clean leather furniture",
+    "Living Room: Sweep out fireplace",
+    "Throughout the house: Wipe baseboards and moldings"
+  ]
+};
+
+let tasks = null;
+let state = null;
+const periods = ['daily','weekly','monthly','seasonal'];
+
+function uid(){
+  return Math.random().toString(36).slice(2,9);
+}
+
+function todayKey(){
+  const d = new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+}
+function weekKey(){
+  const d = new Date();
+  const onejan = new Date(d.getFullYear(),0,1);
+  const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay()+1)/7);
+  return d.getFullYear()+'-W'+week;
+}
+function monthKey(){
+  const d = new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1);
+}
+function seasonKey(){
+  const d = new Date();
+  const m = d.getMonth(); // 0=Jan
+  let season;
+  if(m===11 || m<=1) season='Winter';
+  else if(m<=4) season='Spring';
+  else if(m<=7) season='Summer';
+  else season='Fall';
+  // winter spans Dec-Feb across a year boundary; label by the year winter starts
+  const year = (m===11) ? d.getFullYear() : (m<=1 ? d.getFullYear()-1 : d.getFullYear());
+  return year+'-'+season;
+}
+function periodKey(period){
+  if(period==='daily') return todayKey();
+  if(period==='weekly') return weekKey();
+  if(period==='seasonal') return seasonKey();
+  return monthKey();
+}
+
+function showStatus(msg){
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(showStatus._t);
+  showStatus._t = setTimeout(()=>el.classList.remove('show'), 1400);
+}
+
+async function loadData(){
+  try{
+    const raw = localStorage.getItem('keeping-list:tasks');
+    tasks = raw ? JSON.parse(raw) : null;
+  }catch(e){ tasks = null; }
+
+  if(!tasks){
+    tasks = {
+      daily: DEFAULT_TASKS.daily.map(text=>({id:uid(), text})),
+      weekly: DEFAULT_TASKS.weekly.map(text=>({id:uid(), text})),
+      monthly: DEFAULT_TASKS.monthly.map(text=>({id:uid(), text})),
+      seasonal: DEFAULT_TASKS.seasonal.map(text=>({id:uid(), text}))
+    };
+    persistTasks();
+  }
+
+  try{
+    const raw = localStorage.getItem('keeping-list:state');
+    state = raw ? JSON.parse(raw) : null;
+  }catch(e){ state = null; }
+  if(!state){ state = { daily:{}, weekly:{}, monthly:{}, seasonal:{}, keys:{} }; }
+
+  // reset any period whose stored key doesn't match the current period key
+  let changed = false;
+  periods.forEach(p=>{
+    const currentKey = periodKey(p);
+    if(state.keys[p] !== currentKey){
+      state[p] = {};
+      state.keys[p] = currentKey;
+      changed = true;
+    }
+  });
+  if(changed){ persistState(); }
+}
+
+async function persistTasks(){
+  try{ localStorage.setItem('keeping-list:tasks', JSON.stringify(tasks)); }
+  catch(e){ showStatus('Could not save — try again'); }
+}
+async function persistState(){
+  try{ localStorage.setItem('keeping-list:state', JSON.stringify(state)); }
+  catch(e){ showStatus('Could not save — try again'); }
+}
+
+function render(){
+  const now = new Date();
+  document.getElementById('dateLine').textContent = now.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+
+  periods.forEach(period=>{
+    const listEl = document.getElementById('list-'+period);
+    listEl.innerHTML = '';
+    const items = tasks[period];
+    const checkedMap = state[period];
+
+    if(items.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Nothing on the list yet — add a task below.';
+      listEl.appendChild(empty);
+    }
+
+    items.forEach(item=>{
+      const li = document.createElement('li');
+      li.className = 'item' + (checkedMap[item.id] ? ' done' : '');
+
+      const btn = document.createElement('button');
+      btn.className = 'check' + (checkedMap[item.id] ? ' checked' : '');
+      btn.setAttribute('aria-label', 'Mark "'+item.text+'" '+(checkedMap[item.id] ? 'not done' : 'done'));
+      btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 12L13 4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      btn.onclick = ()=>toggleItem(period, item.id);
+
+      const text = document.createElement('span');
+      text.className = 'item-text';
+      text.textContent = item.text;
+
+      const remove = document.createElement('button');
+      remove.className = 'remove-btn';
+      remove.setAttribute('aria-label','Remove task');
+      remove.textContent = '✕';
+      remove.onclick = ()=>removeTask(period, item.id);
+
+      li.appendChild(btn);
+      li.appendChild(text);
+      li.appendChild(remove);
+      listEl.appendChild(li);
+    });
+
+    const total = items.length;
+    const done = items.filter(i=>checkedMap[i.id]).length;
+    const pct = total ? Math.round((done/total)*100) : 0;
+    document.getElementById('fill-'+period).style.width = pct+'%';
+    document.getElementById('label-'+period).textContent = done+' / '+total;
+    document.getElementById('count-'+period).textContent = done+'/'+total;
+  });
+}
+
+function toggleItem(period, id){
+  state[period][id] = !state[period][id];
+  if(!state[period][id]) delete state[period][id];
+  persistState();
+  render();
+}
+
+function removeTask(period, id){
+  tasks[period] = tasks[period].filter(i=>i.id!==id);
+  delete state[period][id];
+  persistTasks();
+  persistState();
+  render();
+}
+
+async function addTask(period){
+  const input = document.getElementById('input-'+period);
+  const text = input.value.trim();
+  if(!text) return;
+  tasks[period].push({id:uid(), text});
+  input.value = '';
+  await persistTasks();
+  render();
+  showStatus('Added to your '+period+' list');
+}
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelector('.panel[data-period="'+tab.dataset.period+'"]').classList.add('active');
+  });
+});
+
+periods.forEach(p=>{
+  document.getElementById('input-'+p).addEventListener('keydown', e=>{
+    if(e.key === 'Enter') addTask(p);
+  });
+});
+
+(async function init(){
+  await loadData();
+  render();
+})();
+</script>
+</body>
+</html>
